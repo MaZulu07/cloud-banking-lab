@@ -28,8 +28,8 @@ jobs:
     - name: Log in to Docker Hub
       uses: docker/login-action@v2
       with:
-        username: ${{ secrets.mazulu }}
-        password: ${{ secrets.Bassie_07 }}
+        username: mazulu
+        password: Bassie_07 
 
     - name: Push Docker image
       run: docker push mazulu/account-service:latest
