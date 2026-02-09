@@ -20,7 +20,6 @@
         <version>3.5.10</version>
         <relativePath/>
     </parent>
-
     <properties>
         <java.version>17</java.version>
     </properties>
