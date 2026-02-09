@@ -1,0 +1,32 @@
+# Base URL of your Spring Boot service
+$baseUrl = "http://localhost:8080/accounts"
+
+# -----------------------------
+# Update an account by ID
+# -----------------------------
+function Update-Account {
+    param (
+        [int]$Id,
+        [string]$Name,
+        [string]$AccountType,
+        [decimal]$Balance,
+        [string]$Address,
+        [string]$ContactNumber
+    )
+
+    $body = @{
+        name = $Name
+        accountType = $AccountType
+        balance = $Balance
+        address = $Address
+        contactNumber = $ContactNumber
+    } | ConvertTo-Json
+
+    Invoke-RestMethod -Uri "$baseUrl/$Id" -Method Put -Body $body -ContentType "application/json"
+    Write-Host "Account ID $Id updated."
+}
+
+# -----------------------------
+# Example Usage
+# -----------------------------
+# Update-Account -Id 1 -Name "John Doe" -AccountType "Checking" -Balance 7500 -Address "456 Elm St" -ContactNumber "555-9876"
