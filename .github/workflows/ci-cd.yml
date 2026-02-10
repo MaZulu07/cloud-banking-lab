@@ -1,48 +1,42 @@
 name: Account Service CI/CD
 
 on:
-push:
-branches:
-- main
-pull_request:
+ push:
+  branches: [ main ]
+ pull_request: 
+  branches: [ main ]
 
 jobs:
-build-test-and-deploy:
-runs-on: ubuntu-latest
+ build-test-and-deploy:
+  runs-on: ubuntu-latest
 
-steps:
-  # 1. Checkout code
+  steps:
   - name: Checkout repository
     uses: actions/checkout@v4
 
-  # 2. Set up Python
   - name: Set up Python
     uses: actions/setup-python@v5
     with:
       python-version: '3.11'
 
-  # 3. Install dependencies
   - name: Install dependencies
     run: |
       pip install --upgrade pip
       pip install -r requirements.txt
       pip install pytest
 
-  # 4. Run tests (CI)
   - name: Run tests
     run: pytest app/tests
 
-  # 5. Log in to Docker Hub (CD)
   - name: Log in to Docker Hub
     uses: docker/login-action@v2
     with:
       username: mazulu
       password: Bassie_07
 
-  # 6. Build Docker image
   - name: Build Docker image
     run: docker build -t mazulu/account-service:latest .
 
-  # 7. Push Docker image
   - name: Push Docker image
     run: docker push mazulu/account-service:latest
+
