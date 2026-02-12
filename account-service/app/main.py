@@ -37,8 +37,10 @@ def get_account(account_id: int):
     if account_id not in accounts:
         raise HTTPException(status_code=404, detail="Account not found")
     return accounts[account_id]
+    
 
 
 @app.get("/accounts")
 def list_accounts():
     return accounts
+
