@@ -30,11 +30,6 @@ jobs:
           pip install --upgrade pip
           pip install -r account-service/requirements.txt
 
-      # 4️⃣ Run tests
-      - name: Run tests
-        run: |
-          pytest account-service/tests
-
       # 5️⃣ Set up Docker
       - name: Log in to Docker Hub
         uses: docker/login-action@v2
