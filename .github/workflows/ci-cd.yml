@@ -1,63 +1,33 @@
-pipeline {
-    agent any
+name: CI-CD Pipeline
 
-    environment {
-        ACCOUNT_IMAGE = "mazulu/account-service"
-        TAG = "latest"
-    }
+on:
+  push:
+    branches: [ "main" ]
 
-    stages {
+jobs:
+  build-and-push:
+    runs-on: ubuntu-latest
 
-        stage('Checkout Code') {
-            steps {
-                checkout scm
-            }
-        }
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v3
 
-        // ===== Account Service =====
-        stage('Build Account Service') {
-            steps {
-                echo "Building Account Service..."
-                dir('account-service') {
-                    sh 'mvn clean package || true'
-                }
-            }
-        }
+    - name: Set up Java
+      uses: actions/setup-java@v3
+      with:
+        distribution: 'temurin'
+        java-version: '17'
 
-        stage('Docker Build - Account Service') {
-            steps {
-                sh 'docker build -t $ACCOUNT_IMAGE:$TAG ./account-service'
-            }
-        }
+    - name: Build Account Service
+      run: |
+        cd account-service
+        mvn clean package
 
-        stage('Docker Build - Transaction Service') {
-            steps {
-                sh 'docker build -t $TRANSACTION_IMAGE:$TAG ./transaction-service'
-            }
-        }
+    - name: Build Docker Image
+      run: docker build -t mazulu/account-service:latest ./account-service
 
-        // ===== Push Images =====
-        stage('Push to Docker Hub') {
-            steps {
-                withCredentials([usernamePassword(
-                        credentialsId: 'dockerhub-credentials',
-                        usernameVariable: mazulu,
-                        passwordVariable: Bassie_07
-                )]) {
-                    sh 'echo $DOCKER_PASS | docker login -u $DOCKER_USER --password-stdin'
-                    sh 'docker push $ACCOUNT_IMAGE:$TAG'
-                    sh 'docker push $TRANSACTION_IMAGE:$TAG'
-                }
-            }
-        }
-    }
+    - name: Login to Docker Hub
+      run: echo "${{ secrets.DOCKER_PASSWORD }}" | docker login -u "${{ secrets.DOCKER_USERNAME }}" --password-stdin
 
-    post {
-        success {
-            echo 'Both microservices built and pushed successfully!'
-        }
-        failure {
-            echo 'Pipeline failed.'
-        }
-    }
-}
+    - name: Push Docker Image
+      run: docker push mazulu/account-service:latest
