@@ -1,48 +1,63 @@
-name: Account Service CI/CD
+pipeline {
+    agent any
 
-# Trigger workflow on push or pull request to main branch
-on:
-  push:
-    branches:
-      - main
-  pull_request:
-    branches:
-      - main
+    environment {
+        ACCOUNT_IMAGE = "mazulu/account-service"
+        TAG = "latest"
+    }
 
-jobs:
-  build-test-and-deploy:
-    runs-on: ubuntu-latest
+    stages {
 
-    steps:
-      # 1️⃣ Checkout the repo
-      - name: Checkout repository
-        uses: actions/checkout@v3
+        stage('Checkout Code') {
+            steps {
+                checkout scm
+            }
+        }
 
-      # 2️⃣ Set up Python (if your service is Python)
-      - name: Set up Python
-        uses: actions/setup-python@v4
-        with:
-          python-version: '3.11'
+        // ===== Account Service =====
+        stage('Build Account Service') {
+            steps {
+                echo "Building Account Service..."
+                dir('account-service') {
+                    sh 'mvn clean package || true'
+                }
+            }
+        }
 
-      # 3️⃣ Install dependencies
-      - name: Install dependencies
-        run: |
-          pip install --upgrade pip
-          pip install -r account-service/requirements.txt
+        stage('Docker Build - Account Service') {
+            steps {
+                sh 'docker build -t $ACCOUNT_IMAGE:$TAG ./account-service'
+            }
+        }
 
-      # 5️⃣ Set up Docker
-      - name: Log in to Docker Hub
-        uses: docker/login-action@v2
-        with:
-          username: mazulu
-          password: Bassie_07
+        stage('Docker Build - Transaction Service') {
+            steps {
+                sh 'docker build -t $TRANSACTION_IMAGE:$TAG ./transaction-service'
+            }
+        }
 
-      # 6️⃣ Build Docker image
-      - name: Build Docker image
-        run: |
-          docker build -t mazulu/account-service:latest ./account-service
+        // ===== Push Images =====
+        stage('Push to Docker Hub') {
+            steps {
+                withCredentials([usernamePassword(
+                        credentialsId: 'dockerhub-credentials',
+                        usernameVariable: mazulu,
+                        passwordVariable: Bassie_07
+                )]) {
+                    sh 'echo $DOCKER_PASS | docker login -u $DOCKER_USER --password-stdin'
+                    sh 'docker push $ACCOUNT_IMAGE:$TAG'
+                    sh 'docker push $TRANSACTION_IMAGE:$TAG'
+                }
+            }
+        }
+    }
 
-      # 7️⃣ Push Docker image
-      - name: Push Docker image
-        run: |
-          docker push mazulu/account-service:latest
+    post {
+        success {
+            echo 'Both microservices built and pushed successfully!'
+        }
+        failure {
+            echo 'Pipeline failed.'
+        }
+    }
+}
