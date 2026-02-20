@@ -1,22 +1,50 @@
-name: CD
+name: Account Service CI/CD
 
 on:
-  push:
-    branches: [ "main" ]
+push:
+branches:
+- main
+pull_request:
 
 jobs:
-  docker:
-    runs-on: ubuntu-latest
+build-test-and-deploy:
+runs-on: ubuntu-latest
 
-    steps:
-    - name: Checkout code
-      uses: actions/checkout@v4
 
-    - name: Log in to Docker Hub
-      run: echo "${{ secrets.DOCKER_PASSWORD }}" | docker login -u "${{ secrets.DOCKER_USERNAME }}" --password-stdin
+steps:
+  # 1. Checkout code
+  - name: Checkout repository
+    uses: actions/checkout@v4
 
-    - name: Build Docker image
-      run: docker build -t ${{ secrets.DOCKER_USERNAME }}/cloud-banking-app:${{ github.sha }} .
+  # 2. Set up Python
+  - name: Set up Python
+    uses: actions/setup-python@v5
+    with:
+      python-version: '3.11'
 
-    - name: Push image
-      run: docker push ${{ secrets.DOCKER_USERNAME }}/cloud-banking-app:${{ github.sha }}
+  # 3. Install dependencies
+  - name: Install dependencies
+    run: |
+      pip install --upgrade pip
+      pip install -r requirements.txt
+      pip install pytest
+
+  # 4. Run tests (CI)
+  - name: Run tests
+    run: pytest app/tests
+
+  # 5. Log in to Docker Hub (CD)
+  - name: Log in to Docker Hub
+    uses: docker/login-action@v2
+    with:
+      username: mazulu
+      password: Bassie_07
+
+  # 6. Build Docker image
+  - name: Build Docker image
+    run: docker build -t mazulu/account-service:latest .
+
+  # 7. Push Docker image
+  - name: Push Docker image
+    run: docker push ${{ secrets.DOCKER_USERNAME }}/account-service:latest
+```
