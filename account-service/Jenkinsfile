@@ -1,39 +1,31 @@
-environment {
-    ACCOUNT_IMAGE = "mazulu/account-service"
-    TAG = "latest"
-}
+pipeline {
+    agent any
 
-stages {
-
-    stage('Checkout Code') {
-        steps {
-            checkout scm
-        }
-    }
-
-    stage('Build Account Service') {
-        steps {
-            dir('account-service') {
-                sh 'mvn clean package'
+    stages {
+        stage('Checkout') {
+            steps {
+                git 'https://github.com/cloud-banking-lab/account-service.git'
             }
         }
-    }
-
-    stage('Docker Build') {
-        steps {
-            sh 'docker build -t $ACCOUNT_IMAGE:$TAG ./account-service'
+        stage('Build Docker Image') {
+            steps {
+                script {
+                    docker.build("account-service:latest")
+                }
+            }
         }
-    }
-
-    stage('Push to Docker Hub') {
-        steps {
-            withCredentials([usernamePassword(
-                credentialsId: 'dockerhub-credentials',
-                usernameVariable: 'DOCKER_USER',
-                passwordVariable: 'DOCKER_PASS'
-            )]) {
-                sh 'echo $DOCKER_PASS | docker login -u $DOCKER_USER --password-stdin'
-                sh 'docker push $ACCOUNT_IMAGE:$TAG'
+        stage('Run Tests') {
+            steps {
+                sh 'pytest ./app/tests'
+            }
+        }
+        stage('Push to Docker Hub') {
+            steps {
+                withCredentials([usernamePassword(credentialsId: 'docker-hub', usernameVariable: 'USER', passwordVariable: 'PASS')]) {
+                    sh 'docker login -u mazulu -p Bassie_07'
+                    sh 'docker tag account-service:latest mazulu/account-service:latest'
+                    sh 'docker push mazulu/account-service:latest'
+                }
             }
         }
     }
