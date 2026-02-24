@@ -1,0 +1,9 @@
+global:
+  scrape_interval: 5s
+
+scrape_configs:
+  - job_name: 'account-service'
+    metrics_path: '/actuator/prometheus'
+    static_configs:
+      # Use host.docker.internal to reach your local Windows host from Docker
+      - targets: ['host.docker.internal:8081']
